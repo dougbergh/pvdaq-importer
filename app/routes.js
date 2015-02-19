@@ -7,7 +7,7 @@ var key = 'api_key=dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
 
 
 // Retrieve plant historical energy
-function getEnergy(plantId,start,end){
+function getEnergy(plantId,start,end,plantMD){
 
 	var options = {
 	    host:'developer.nrel.gov',
@@ -30,13 +30,15 @@ function getEnergy(plantId,start,end){
 
 	    res2.on('end', function(endReply) {
 		var plantTS = JSON.parse( tsData ).outputs;
+		console.log( 'META-DATA' );
+		console.log( plantMD );
+		console.log( 'ENERGY DATA' );
 		console.log( plantTS );
 	    });
 
 	}).on('error', function(e) {
 	    console.log("ERROR: " + e.message);
         });
-
 };
 
 // Retrieve plant meta-data
@@ -57,10 +59,9 @@ function getMeta(firstPlantId,numPlants){
 	    res2.on('data', function(nrelReply) {
 
 		var plantMD = JSON.parse( nrelReply ).outputs[0];
-		console.log( plantMD );
 		var startDate = '01/01/'+plantMD.available_years[0];
 
-		getEnergy( firstPlantId, startDate,'12/01/2014' );
+		getEnergy( firstPlantId, startDate, '12/01/2014', plantMD );
 
 	    });
 
