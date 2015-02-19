@@ -77,7 +77,7 @@ module.exports = function(app) {
 
     // get all
     app.get('/api/import', function(req, res) {
-	res.json('hi mom, thanks for the GET!'); // return all records in JSON format
+	res.json('ready...'); // return all records in JSON format
     });
 
     // import the plants specified in the req
@@ -85,7 +85,7 @@ module.exports = function(app) {
 
 	getMeta( req.body.startSystemId, req.body.numSystemIds );
 
-	res.json('HI Mom, you POSTED');
+	res.json( 'import started with system_id '+req.body.startSystemId+' for '+req.body.numSystemIds+' ids');
     });
 
     // application -------------------------------------------------------------
