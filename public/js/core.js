@@ -1,2 +1,2 @@
-angular.module('testrun', ['testrunController', 'testrunService', 
-			   'testexecutorService', 'sendemailService' ]);
+angular.module('importer', ['importerController', 'importerService' ]);
+
