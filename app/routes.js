@@ -3,18 +3,48 @@ AWS.config.region = 'us-west-2';
 var Http = require('http');
 var converter = require('./converter.js');
 
-var auth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
-var key = 'api_key=dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
+var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
+var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
+var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
 
+// Poke MD into oSPARC
+function addPlant( mdXml ) {
+
+    var options = {
+	method:'POST',
+	host:'osparctest-env3.elasticbeanstalk.com',
+	path:'/v1/plant',
+	headers:{
+	    'Authorization':oSparcAuth,
+	    'Content-type':'text/xml',
+	}
+    };
+    
+    var req = Http.request(options, function(res) {
+	    
+	console.log('addPlant STATUS: '+res.statusCode);
+
+	res.on('data', function(chunk) {
+		console.log( 'addPlant reply BODY: '+chunk);
+        });
+    });
+
+    req.on('error', function(e) {
+	    console.log("ERROR: " + e.message);
+    });
+
+    req.write( mdXml );
+    req.end();
+}
 
 // Retrieve plant historical energy
 function getEnergy(plantId,start,end,plantMD){
 
 	var options = {
 	    host:'developer.nrel.gov',
-	    path:'/api/pvdaq/v3/site_data.json?'+key+'&system_id='+plantId+'&aggregate=monthly&start_date='+start+'&end_date='+end,
+	    path:'/api/pvdaq/v3/site_data.json?api_key='+pvdaqKey+'&system_id='+plantId+'&aggregate=monthly&start_date='+start+'&end_date='+end,
 	    headers:{
-		'Authorization':auth,
+		'Authorization':pvdaqAuth,
 		'Connection':'close'  // make the 'end' event happen sooner
 	    }
 	};
@@ -38,6 +68,7 @@ function getEnergy(plantId,start,end,plantMD){
 
 		console.log( plantMDXML );
 
+		addPlant( plantMDXML );
 	    });
 
 	}).on('error', function(e) {
@@ -50,9 +81,9 @@ function getMeta(firstPlantId,numPlants){
 
 	var options = {
 	    host:'developer.nrel.gov',
-	    path:'/api/pvdaq/v3/sites.json?'+key+'&system_id='+firstPlantId,
+	    path:'/api/pvdaq/v3/sites.json?api_key='+pvdaqKey+'&system_id='+firstPlantId,
 	    headers:{
-		'Authorization':auth
+		'Authorization':pvdaqAuth
 	    }
 	};
 	

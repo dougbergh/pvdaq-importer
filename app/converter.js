@@ -1,15 +1,15 @@
-exports.toPed = function( pvdaqMD ) {
+exports.toPed = function( pvdaqMD, actDate ) {
 
     var now = new Date();
     var ret = '<sunSpecPlantExtract t="'+now.toISOString()+'" seqId="1" lastSeqId="1" v="2">\r\n';
        ret += '  <plant id="'+pvdaqMD.name_public+'" locale="en-US" v="2">\r\n';
        ret += '    <name>'+pvdaqMD.name_public+'</name>\r\n';
-       ret += '    <activationDate>2007-08-27</activationDate>\r\n';    // XXX need actual date!!!
+       ret += '    <activationDate>'+actDate+'</activationDate>\r\n';    // comes from TS - first data point
        ret += '    <location>\r\n';
        ret += '      <latitude>'+pvdaqMD.site_latitude+'</latitude>\r\n';
        ret += '      <longitude>'+pvdaqMD.site_longitude+'</longitude>\r\n';
-       ret += '      <stateProvince>'+'XXX'+'</stateProvince>\r\n';     // XXX
-       ret += '      <postal>'+'XXX'+'</postal>\r\n';  // XXX
+    //       ret += '      <stateProvince>'+'XXX'+'</stateProvince>\r\n';     // XXX
+    //       ret += '      <postal>'+'XXX'+'</postal>\r\n';  // XXX
        ret += '    </location>\r\n';
        ret += '    <namePlate>\r\n';
        ret += '      <property id="installedDCCapacity" type="float">'+pvdaqMD.site_power+'</property>\r\n';
@@ -51,4 +51,15 @@ exports.toPed = function( pvdaqMD ) {
     ret += '  </plant>\r\n';
     ret += '</sunSpecPlantExtract>\r\n';
 	return ret;
+}
+
+exports.getFirstYear = function( pvdaqMD ) {
+    return '01/01/'+pvdaqMD.available_years[0];
+}
+
+exports.getFirstDate = function( pvdaqTS ) {
+
+    var firstDatapointTime = new Date( pvdaqTS[1][0] );
+
+    return firstDatapointTime.toDateString();
 }
