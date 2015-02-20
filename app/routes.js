@@ -1,6 +1,7 @@
 var AWS = require('aws-sdk');
 AWS.config.region = 'us-west-2';
 var Http = require('http');
+var converter = require('./converter.js');
 
 var auth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var key = 'api_key=dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
@@ -14,10 +15,10 @@ function getEnergy(plantId,start,end,plantMD){
 	    path:'/api/pvdaq/v3/site_data.json?'+key+'&system_id='+plantId+'&aggregate=monthly&start_date='+start+'&end_date='+end,
 	    headers:{
 		'Authorization':auth,
-		'Connection':'close'
+		'Connection':'close'  // make the 'end' event happen sooner
 	    }
 	};
-	
+
 	Http.get(options, function(res2) {
 
 	    console.log('getEnergy STATUS: '+res2.statusCode);
@@ -30,10 +31,13 @@ function getEnergy(plantId,start,end,plantMD){
 
 	    res2.on('end', function(endReply) {
 		var plantTS = JSON.parse( tsData ).outputs;
-		console.log( 'META-DATA' );
-		console.log( plantMD );
-		console.log( 'ENERGY DATA' );
-		console.log( plantTS );
+
+		var actDate = converter.getFirstDate( plantTS );
+
+		var plantMDXML = converter.toPed( plantMD, actDate );
+
+		console.log( plantMDXML );
+
 	    });
 
 	}).on('error', function(e) {
@@ -59,7 +63,9 @@ function getMeta(firstPlantId,numPlants){
 	    res2.on('data', function(nrelReply) {
 
 		var plantMD = JSON.parse( nrelReply ).outputs[0];
-		var startDate = '01/01/'+plantMD.available_years[0];
+		console.log( plantMD );
+
+		var startDate = converter.getFirstYear( plantMD );
 
 		getEnergy( firstPlantId, startDate, '12/01/2014', plantMD );
 
