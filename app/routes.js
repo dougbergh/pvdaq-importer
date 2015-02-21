@@ -6,11 +6,7 @@ var converter = require('./converter.js');
 var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
 var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
-
-// Poke MD into oSPARC
-function addPlant( mdXml ) {
-
-    var options = {
+var oSparcPostOptions = {
 	method:'POST',
 	host:'osparctest-env3.elasticbeanstalk.com',
 	path:'/v1/plant',
@@ -20,25 +16,56 @@ function addPlant( mdXml ) {
 	}
     };
     
-    var req = Http.request(options, function(res) {
+
+// Poke TS into oSPARC
+function addTS( tsXML ) {
+
+    var req = Http.request(oSparcPostOptions, function(res) {
+	    
+	console.log('addTS STATUS: '+res.statusCode);
+
+	res.on('data', function(chunk) {
+
+	    console.log( 'addPlant reply BODY: '+chunk);
+	});
+	
+	req.on('error', function(e) {
+		console.log("ERROR: " + e.message);
+        });
+	
+    });
+
+    req.write( tsXml );
+    req.end();
+}
+
+// Poke plant into oSPARC
+function poke( mdXml,tsXml ) {
+
+    var req = Http.request(oSparcPostOptions, function(res) {
 	    
 	console.log('addPlant STATUS: '+res.statusCode);
 
 	res.on('data', function(chunk) {
-		console.log( 'addPlant reply BODY: '+chunk);
-        });
+	    console.log( 'addPlant reply BODY: '+chunk);
+		
+	    if ( res.statusCode == 200 ) {
+		
+		addTS( txXml );
+	    }
+	});
+	
+	req.on('error', function(e) {
+		console.log("ERROR: " + e.message);
+	});
     });
-
-    req.on('error', function(e) {
-	    console.log("ERROR: " + e.message);
-    });
-
+    
     req.write( mdXml );
     req.end();
 }
 
 // Retrieve plant historical energy
-function getEnergy(plantId,start,end,plantMD){
+function getTS( plantMD,plantId,start,end,plantMD ) {
 
 	var options = {
 	    host:'developer.nrel.gov',
@@ -60,15 +87,15 @@ function getEnergy(plantId,start,end,plantMD){
 	    });
 
 	    res2.on('end', function(endReply) {
+
 		var plantTS = JSON.parse( tsData ).outputs;
 
-		var actDate = converter.getFirstDate( plantTS );
+		mdXml = converter.toMDPed( plantMD, plantTS );
+		console.log( mdXml );
+		tsXml = converter.toTSPed( plantMD, plantTS );
+		console.log( tsXml );
 
-		var plantMDXML = converter.toPed( plantMD, actDate );
-
-		console.log( plantMDXML );
-
-		addPlant( plantMDXML );
+		poke( mdXml, tsXml );
 	    });
 
 	}).on('error', function(e) {
@@ -77,7 +104,7 @@ function getEnergy(plantId,start,end,plantMD){
 };
 
 // Retrieve plant meta-data
-function getMeta(firstPlantId,numPlants){
+function getPlantFromPVDAQ(firstPlantId,numPlants){
 
 	var options = {
 	    host:'developer.nrel.gov',
@@ -98,7 +125,7 @@ function getMeta(firstPlantId,numPlants){
 
 		var startDate = converter.getFirstYear( plantMD );
 
-		getEnergy( firstPlantId, startDate, '12/01/2014', plantMD );
+		getTS( plantMD, firstPlantId, startDate, '12/01/2014', plantMD );
 
 	    });
 
@@ -121,7 +148,7 @@ module.exports = function(app) {
     // import the plants specified in the req
     app.post('/api/import', function(req, res) {
 
-	getMeta( req.body.startSystemId, req.body.numSystemIds );
+	getPlantFromPVDAQ( req.body.startSystemId, req.body.numSystemIds );
 
 	res.json( 'import started with system_id '+req.body.startSystemId+' for '+req.body.numSystemIds+' ids');
     });

@@ -1,5 +1,19 @@
-exports.toPed = function( pvdaqMD, actDate ) {
+exports.getFirstYear = function( pvdaqMD ) {
+    return '01/01/'+pvdaqMD.available_years[0];
+}
 
+function getFirstDate( pvdaqTS ) {
+
+    var firstPt = new Date( pvdaqTS[1][0] );
+
+    var dateTime = firstPt.toISOString();
+
+    return dateTime.substring(0,10);  // lop off the time
+}
+
+exports.toMDPed = function( pvdaqMD, pvdaqTS ) {
+
+    var actDate = getFirstDate( pvdaqTS );
     var now = new Date();
     var ret = '<sunSpecPlantExtract t="'+now.toISOString()+'" seqId="1" lastSeqId="1" v="2">\r\n';
        ret += '  <plant id="'+pvdaqMD.name_public+'" locale="en-US" v="2">\r\n';
@@ -8,8 +22,8 @@ exports.toPed = function( pvdaqMD, actDate ) {
        ret += '    <location>\r\n';
        ret += '      <latitude>'+pvdaqMD.site_latitude+'</latitude>\r\n';
        ret += '      <longitude>'+pvdaqMD.site_longitude+'</longitude>\r\n';
-    //       ret += '      <stateProvince>'+'XXX'+'</stateProvince>\r\n';     // XXX
-    //       ret += '      <postal>'+'XXX'+'</postal>\r\n';  // XXX
+       ret += '      <stateProvince>'+'NY'+'</stateProvince>\r\n';     // XXX
+       ret += '      <postal>'+'10234'+'</postal>\r\n';  // XXX
        ret += '    </location>\r\n';
        ret += '    <namePlate>\r\n';
        ret += '      <property id="installedDCCapacity" type="float">'+pvdaqMD.site_power+'</property>\r\n';
@@ -48,20 +62,50 @@ exports.toPed = function( pvdaqMD, actDate ) {
     ret += '      <property id="Num" type="integer">4587</property>\r\n';
     ret += '    </equipment>\r\n';
     */
+
     ret += '  </plant>\r\n';
     ret += '</sunSpecPlantExtract>\r\n';
-	return ret;
+    return ret;
 }
 
-exports.getFirstYear = function( pvdaqMD ) {
-    return '01/01/'+pvdaqMD.available_years[0];
+exports.toTSPed = function( pvdaqMD,pvdaqTS ) {
+
+    var i = 1;
+    var point;
+    var points = '';
+    while ( (point = pvdaqTS[i]) != null ) {
+    
+	var timestamp = new Date( point[0] ).toISOString();
+
+	if ( typeof point[7] === "undefined" ) break;  // XXX doesn't work
+	if ( typeof point[17] === "undefined" ) break; // XXX doesn't work
+
+	var whdc = parseInt( point[7] ) * 1000;
+	var whq = parseInt( point[17] ) * 1000;
+
+	if ( (whdc != 'NaN') && (whq != 'NaN') ) {  // XXX if doesn't work
+	    points += '  <sunSpecAggregatedData t="'+timestamp+'" interval="monthly">\r\n';
+	    points += '    <plantMeasurements>\r\n';
+	    points += '      <p id="WH" diff="'+whq+'"/>\r\n';
+	    points += '    </plantMeasurements>\r\n';
+	    points += '    <pvArrayMeasurements pvArrayId="1">\r\n';
+	    points += '      <p id="WHDC" diff="'+whdc+'"/>\r\n';
+	    points += '    </pvArrayMeasurements>\r\n';
+	    points += '  </sunSpecAggregatedData>\r\n';
+	}
+	i++;
+    }
+
+    var now = new Date().toISOString();
+    var start = new Date( pvdaqTS[1][0] ).toISOString();
+    var end = new Date( pvdaqTS[i-1][0] ).toISOString();
+
+    var ret = '';
+    ret += '<sunSpecPlantExtract t="'+now+'" periodStart="'+start+'" periodEnd="'+end+'v="2">\r\n';
+    ret += '  <plant id="'+pvdaqMD.name_public+'" locale="en-US" v="2"/>\r\n';
+    ret += points;
+    ret += '</sunSpecPlantExtract>';
+
+    return ret;
 }
 
-exports.getFirstDate = function( pvdaqTS ) {
-
-    var firstPt = new Date( pvdaqTS[1][0] );
-
-    var dateTime = firstPt.toISOString();
-
-    return dateTime.substring(0,10);  // lop off the time
-}
