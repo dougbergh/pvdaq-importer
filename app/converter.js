@@ -59,7 +59,9 @@ exports.getFirstYear = function( pvdaqMD ) {
 
 exports.getFirstDate = function( pvdaqTS ) {
 
-    var firstDatapointTime = new Date( pvdaqTS[1][0] );
+    var firstPt = new Date( pvdaqTS[1][0] );
 
-    return firstDatapointTime.toDateString();
+    var dateTime = firstPt.toISOString();
+
+    return dateTime.substring(0,10);  // lop off the time
 }
