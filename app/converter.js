@@ -22,8 +22,8 @@ exports.toMDPed = function( pvdaqMD, pvdaqTS ) {
        ret += '    <location>\r\n';
        ret += '      <latitude>'+pvdaqMD.site_latitude+'</latitude>\r\n';
        ret += '      <longitude>'+pvdaqMD.site_longitude+'</longitude>\r\n';
-       ret += '      <stateProvince>'+'NY'+'</stateProvince>\r\n';     // XXX
-       ret += '      <postal>'+'10234'+'</postal>\r\n';  // XXX
+       ret += '      <stateProvince>'+pvdaqMD.state+'</stateProvince>\r\n';
+       ret += '      <postal>'+pvdaqMD.zip+'</postal>\r\n';
        ret += '    </location>\r\n';
        ret += '    <namePlate>\r\n';
        ret += '      <property id="installedDCCapacity" type="float">'+pvdaqMD.site_power+'</property>\r\n';

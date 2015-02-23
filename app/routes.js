@@ -1,3 +1,11 @@
+// Two calls are made to PVDAQ for each plant.
+// The first retrieves the plant meta-data (location etc); the second retrieves time-series history.
+// PVDAQ does not store address info, rather only lat/long, so a call is made to and API to retrieve that info.
+// Once all is assembled, the oSPARC API is called to add the plant.  Here too, there are two calls:
+// Meta-data and time-series history.
+// Each step is handled by a function; read this file from bottom to top to see the sequence of events.
+
+
 var AWS = require('aws-sdk');
 AWS.config.region = 'us-west-2';
 var Http = require('http');
@@ -12,13 +20,14 @@ var oSparcPostOptions = {
 	path:'/v1/plant',
 	headers:{
 	    'Authorization':oSparcAuth,
-	    'Content-type':'text/xml',
+	    'Content-type':'text/xml'
 	}
     };
     
-
+//
 // Poke TS into oSPARC
-function addTS( tsXML ) {
+//
+function pokeTS( tsXML ) {
 
     var req = Http.request(oSparcPostOptions, function(res) {
 	    
@@ -27,6 +36,7 @@ function addTS( tsXML ) {
 	res.on('data', function(chunk) {
 
 	    console.log( 'addPlant reply BODY: '+chunk);
+
 	});
 	
 	req.on('error', function(e) {
@@ -39,8 +49,10 @@ function addTS( tsXML ) {
     req.end();
 }
 
-// Poke plant into oSPARC
-function poke( mdXml,tsXml ) {
+//
+// Poke plant into oSPARC, starting with MD
+//
+function pokeMD( mdXml, tsXml ) {
 
     var req = Http.request(oSparcPostOptions, function(res) {
 	    
@@ -51,7 +63,7 @@ function poke( mdXml,tsXml ) {
 		
 	    if ( res.statusCode == 200 ) {
 		
-		addTS( txXml );
+		pokeTS( tsXml );
 	    }
 	});
 	
@@ -64,8 +76,86 @@ function poke( mdXml,tsXml ) {
     req.end();
 }
 
+//
+// Convert JSON retrieved from PVDAQ to PED suitable for oSPARC
+//
+function convert( plantMD, plantTS ) {
+
+    mdXml = converter.toMDPed( plantMD, plantTS );
+    console.log( mdXml );
+    tsXml = converter.toTSPed( plantMD, plantTS );
+    console.log( tsXml );
+
+    pokeMD( mdXml, tsXml );
+}
+
+//
+// PVDAQ returned lat & long.  Get state and postal code from that.
+//
+function getAddress( plantMD, plantTS ) {
+
+    // some pvdaq db entries are wrong, their long is positive
+    var long = new String( plantMD.site_longitude );
+    if ( long.charAt(0) != '-' )
+	plantMD.site_longitude = '-'+plantMD.site_longitude;
+
+    var options = {
+	'host':'maps.googleapis.com',
+	'path':'/maps/api/geocode/json?latlng='+plantMD.site_latitude+','+plantMD.site_longitude,
+	'headers': {
+	    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+	    'Accept-Language':'en-US,en;q=0.8,de;q=0.6'
+	}
+    };
+
+    Http.get(options, function(res2) {
+	    
+	var tsData = '';
+	
+	res2.on('data', function(dataReply) {
+	    tsData += dataReply;
+        });
+	
+	res2.on('end', function(endReply) {
+
+            console.log( 'geocode STATUS: '+res2.statusCode );
+	    
+	    address = JSON.parse( tsData );
+
+	    var components = address.results[0].address_components;
+
+	    var state = '';
+	    var zip = '';
+
+	    components.forEach( function( component ) {
+
+		component.types.forEach( function( type ) {
+
+		    if ( type == "administrative_area_level_1" )
+			state = component.short_name;
+		    if ( type == "postal_code" ) 
+			zip = component.short_name;
+		});
+	    });
+
+	    if ( state.length > 0 )
+		plantMD.state = state;
+	    if ( zip.length > 0 )
+		plantMD.zip = zip;
+
+	    convert( plantMD, plantTS );
+	});
+
+	}).on('error', function(e) {
+	    console.log("ERROR: " + e.message);
+    });
+
+}
+
+//
 // Retrieve plant historical energy
-function getTS( plantMD,plantId,start,end,plantMD ) {
+//
+function getPlantTS( plantMD, plantId, start, end ) {
 
 	var options = {
 	    host:'developer.nrel.gov',
@@ -90,12 +180,7 @@ function getTS( plantMD,plantId,start,end,plantMD ) {
 
 		var plantTS = JSON.parse( tsData ).outputs;
 
-		mdXml = converter.toMDPed( plantMD, plantTS );
-		console.log( mdXml );
-		tsXml = converter.toTSPed( plantMD, plantTS );
-		console.log( tsXml );
-
-		poke( mdXml, tsXml );
+		getAddress( plantMD, plantTS );
 	    });
 
 	}).on('error', function(e) {
@@ -103,8 +188,10 @@ function getTS( plantMD,plantId,start,end,plantMD ) {
         });
 };
 
+//
 // Retrieve plant meta-data
-function getPlantFromPVDAQ(firstPlantId,numPlants){
+//
+function getPlantMD( firstPlantId, numPlants ){
 
 	var options = {
 	    host:'developer.nrel.gov',
@@ -125,17 +212,19 @@ function getPlantFromPVDAQ(firstPlantId,numPlants){
 
 		var startDate = converter.getFirstYear( plantMD );
 
-		getTS( plantMD, firstPlantId, startDate, '12/01/2014', plantMD );
+		getPlantTS( plantMD, firstPlantId, startDate, '12/01/2014' );
 
 	    });
 
 	}).on('error', function(e) {
 	    console.log("ERROR: " + e.message);
         });
-
 };
 
 
+//
+// MAIN entry point, called by client
+//
 module.exports = function(app) {
 
     // api ---------------------------------------------------------------------
@@ -148,9 +237,10 @@ module.exports = function(app) {
     // import the plants specified in the req
     app.post('/api/import', function(req, res) {
 
-	getPlantFromPVDAQ( req.body.startSystemId, req.body.numSystemIds );
+	getPlantMD( req.body.startSystemId, req.body.numSystemIds );
 
 	res.json( 'import started with system_id '+req.body.startSystemId+' for '+req.body.numSystemIds+' ids');
+
     });
 
     // application -------------------------------------------------------------
