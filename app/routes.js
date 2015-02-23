@@ -14,28 +14,29 @@ var converter = require('./converter.js');
 var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
 var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
-var oSparcPostOptions = {
+    
+//
+// Poke TS into oSPARC
+//
+function pokeTS( uuid, tsXML ) {
+
+var options = {
 	method:'POST',
 	host:'osparctest-env3.elasticbeanstalk.com',
-	path:'/v1/plant',
+	path:'/v1/plant/'+uuid+'/timeseries',
 	headers:{
 	    'Authorization':oSparcAuth,
 	    'Content-type':'text/xml'
 	}
     };
     
-//
-// Poke TS into oSPARC
-//
-function pokeTS( tsXML ) {
-
-    var req = Http.request(oSparcPostOptions, function(res) {
+    var req = Http.request(options, function(res) {
 	    
 	console.log('addTS STATUS: '+res.statusCode);
 
 	res.on('data', function(chunk) {
 
-	    console.log( 'addPlant reply BODY: '+chunk);
+	    console.log( 'addTS reply BODY: '+chunk);
 
 	});
 	
@@ -54,16 +55,25 @@ function pokeTS( tsXML ) {
 //
 function pokeMD( mdXml, tsXml ) {
 
-    var req = Http.request(oSparcPostOptions, function(res) {
+var options = {
+	method:'POST',
+	host:'osparctest-env3.elasticbeanstalk.com',
+	path:'/v1/plant',
+	headers:{
+	    'Authorization':oSparcAuth,
+	    'Content-type':'text/xml'
+	}
+    };
+    var req = Http.request(options, function(res) {
 	    
 	console.log('addPlant STATUS: '+res.statusCode);
 
-	res.on('data', function(chunk) {
-	    console.log( 'addPlant reply BODY: '+chunk);
+	res.on('data', function(uuid) {
+	    console.log( 'addPlant reply BODY: '+uuid);
 		
 	    if ( res.statusCode == 200 ) {
 		
-		pokeTS( tsXml );
+		pokeTS( uuid, tsXml );
 	    }
 	});
 	
@@ -83,6 +93,8 @@ function convert( plantMD, plantTS ) {
 
     mdXml = converter.toMDPed( plantMD, plantTS );
     console.log( mdXml );
+    console.log( '\r\n\r\n\r\n\r\n\r\n Time Series: \r\n' );
+    console.log( plantTS );
     tsXml = converter.toTSPed( plantMD, plantTS );
     console.log( tsXml );
 
