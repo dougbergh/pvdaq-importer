@@ -42,6 +42,8 @@ exports.toMDPed = function( pvdaqMD, pvdaqTS ) {
        ret += '    <pvArray>\r\n';
        ret += '      <property id="dcRating" type="integer">'+pvdaqMD.site_power+'</property>\r\n';
        //       ret += '      <property id="numModules" type="integer">4587</property>\r\n';
+       ret += '      <property id="fixedTilt" type="integer">'+pvdaqMD.site_tilt+'</property>\r\n';
+       ret += '      <property id="fixedAzimuth" type="integer">'+pvdaqMD.site_azimuth+'</property>\r\n';
        ret += '    </pvArray>\r\n';
     /*
     ret += '    <participant type="Installer">\r\n';
