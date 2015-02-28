@@ -8,8 +8,7 @@
 //add timestamps in front of log messages
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-var AWS = require('aws-sdk');
-AWS.config.region = 'us-west-2';
+var fs = require('fs');
 var series = require('./seriesImport.js');
 
 var items = [];
@@ -34,6 +33,8 @@ module.exports = function(app) {
 	    for ( i = 0; i < req.body.numSystemIds; i++ ) {
 		items[i] = parseInt( req.body.startSystemId ) + i;
 	    }
+
+	    fs.appendFileSync( 'pvdaq_ids.txt', new Date().toLocaleTimeString()+'\r\n' );
 
 	    series.seriesImport(items);
 

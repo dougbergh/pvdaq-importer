@@ -141,6 +141,7 @@ function getAddress( plantId, plantMD, plantTS ) {
 
 	    if ( res2.statusCode == 200 ) {
 
+		try {
 		address = JSON.parse( tsData );
 
 		var components = address.results[0].address_components;
@@ -165,6 +166,9 @@ function getAddress( plantId, plantMD, plantTS ) {
 		    plantMD.zip = zip;
 		
 		convert( plantId, plantMD, plantTS );
+		} catch( err ) {
+	            console.log( err );
+		}
 	    }
 	});
 
