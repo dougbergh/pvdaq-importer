@@ -1,16 +1,17 @@
 {
-  "name"         : "pvdaq-importer",
-  "version"      : "0.0.1",
-  "description"  : "oSPARC PVDAQ plant importer ",
-  "main"         : "server.js",
-  "author"       : "Doug",
-  "dependencies" : {
-    "express"         : "~4.6.1",
-    "mongoose"        : "~3.8.13",
-    "morgan"          : "~1.1.1",
-    "body-parser"     : "~1.4.3",
-    "method-override" : "~2.1.1",
-    "aws-sdk"         : ">= 2.0.9",
-    "node-uuid"       : ">= 1.4.1"
+  "name": "pvdaq-importer",
+  "version": "0.0.1",
+  "description": "oSPARC PVDAQ plant importer ",
+  "main": "server.js",
+  "author": "Doug",
+  "dependencies": {
+    "aws-sdk": ">= 2.0.9",
+    "body-parser": "~1.4.3",
+    "console-stamp": "^0.1.5",
+    "express": "~4.6.1",
+    "method-override": "~2.1.1",
+    "mongoose": "~3.8.13",
+    "morgan": "~1.1.1",
+    "node-uuid": ">= 1.4.1"
   }
 }
