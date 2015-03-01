@@ -33,7 +33,7 @@ function pokeTS( plantId,tsXML ) {
 	    
 	console.log('addTS STATUS: '+res.statusCode);
 	if ( res.statusCode != 200 ) {
-            logResult( plantId+' ... failed' );
+            logResult( plantId+' ... failed code '+res.statusCode );
 	}
 
 	res.on('data', function(plantId,chunk) {
@@ -104,6 +104,45 @@ function pokeMD( plantId, mdXml, tsXml ) {
 }
 
 //
+// Retrieve plant historical energy
+//
+function getPlantTS( plantMD, plantId, start, end ) {
+
+	var options = {
+	    host:'developer.nrel.gov',
+	    path:'/api/pvdaq/v3/site_data.json?api_key='+pvdaqKey+'&system_id='+plantId+'&aggregate=monthly&start_date='+start+'&end_date='+end,
+	    headers:{
+		'Authorization':pvdaqAuth,
+		'Connection':'close'  // make the 'end' event happen sooner
+	    }
+	};
+
+	Http.get(options, function(res2,plantMD) {
+
+	    console.log('getTS STATUS: '+res2.statusCode );
+
+	    var tsData = '';
+
+	    res2.on('data', function(dataReply) {
+	        tsData += dataReply;
+	    });
+
+	    res2.on('end', function(endReply) {
+
+		if ( res2.statusCode == 200 ) {
+		    var plantTS = JSON.parse( tsData ).outputs;
+
+		    convert( plantId, plantMD, plantTS );
+
+		}
+	    });
+
+	}).on('error', function(e) {
+	    console.log("ERROR: " + e.message);
+        });
+};
+
+//
 // PVDAQ returned lat & long.  Get state and postal code from that.
 //
 function getAddress( plantId, plantMD, plantTS ) {
@@ -122,12 +161,11 @@ function getAddress( plantId, plantMD, plantTS ) {
 	}
     };
 
+    console.log( 'getAddres: '+options.host+' '+options.path /*+' '+options.headers.Authorization*/ );
+
     Http.get(options, function(res2) {
 	    
 	console.log('getAddress STATUS: '+res2.statusCode);
-	if ( res2.statusCode != 200 ) {
-            logResult( plantId+' ... failed' );
-	}
 
 	var tsData = '';
 	
@@ -136,8 +174,6 @@ function getAddress( plantId, plantMD, plantTS ) {
         });
 	
 	res2.on('end', function(endReply) {
-
-            console.log( 'geocode STATUS: '+res2.statusCode );
 
 	    if ( res2.statusCode == 200 ) {
 
@@ -165,7 +201,10 @@ function getAddress( plantId, plantMD, plantTS ) {
 		if ( zip.length > 0 )
 		    plantMD.zip = zip;
 		
-		convert( plantId, plantMD, plantTS );
+		var startDate = converter.getFirstYear( plantMD );
+		
+		getPlantTS( plantMD, plantId, startDate, '01/01/2015' );
+
 		} catch( err ) {
 	            console.log( err );
 		}
@@ -177,47 +216,6 @@ function getAddress( plantId, plantMD, plantTS ) {
     });
 
 }
-
-//
-// Retrieve plant historical energy
-//
-function getPlantTS( plantMD, plantId, start, end ) {
-
-	var options = {
-	    host:'developer.nrel.gov',
-	    path:'/api/pvdaq/v3/site_data.json?api_key='+pvdaqKey+'&system_id='+plantId+'&aggregate=monthly&start_date='+start+'&end_date='+end,
-	    headers:{
-		'Authorization':pvdaqAuth,
-		'Connection':'close'  // make the 'end' event happen sooner
-	    }
-	};
-
-	Http.get(options, function(res2) {
-
-	    console.log('getTS STATUS: '+res2.statusCode);
-	    if ( res2.statusCode != 200 ) {
-		logResult( plantId+' ... failed' );
-	    }
-
-	    var tsData = '';
-
-	    res2.on('data', function(dataReply) {
-	        tsData += dataReply;
-	    });
-
-	    res2.on('end', function(endReply) {
-
-		if ( res2.statusCode == 200 ) {
-		    var plantTS = JSON.parse( tsData ).outputs;
-
-		    getAddress( plantMD, plantTS );
-		}
-	    });
-
-	}).on('error', function(e) {
-	    console.log("ERROR: " + e.message);
-        });
-};
 
 //
 // Retrieve plant meta-data
@@ -233,23 +231,18 @@ exports.getPlantMD = function( plantId ) {
 	    }
 	};
 
-	console.log( 'getPlantMD: '+options.host+' '+options.path /*+' '+options.headers.Authorization*/ );
+	console.log( 'getPlantMD: '+options.host+' '+options.path );
 	
 	Http.get(options, function(res) {
 
 	    console.log('getMD STATUS: '+res.statusCode);
-	    if ( res.statusCode != 200 ) {
-		logResult( plantId+' ... failed' );
-	    }
 	    
 	    res.on('data', function(nrelReply) {
 
 		if ( res.statusCode == 200 ) {
 		    var plantMD = JSON.parse( nrelReply ).outputs[0];
-		
-		    var startDate = converter.getFirstYear( plantMD );
-		
-		    getPlantTS( plantMD, plantId, startDate, '12/01/2014' );
+
+		    getAddress( plantMD );
 		}
 	    });
 
