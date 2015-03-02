@@ -1,21 +1,35 @@
 exports.getFirstYear = function( pvdaqMD ) {
-    return '01/01/'+pvdaqMD.available_years[0];
+    var year = pvdaqMD.available_years[0];
+    if ( year == null || year.length == 0 )
+	year = '2007'
+    return '01/01/'+year;
+}
+
+exports.getUuid = function( pvdaqMD ) {
+    return getUuidInternal( pvdaqMD );
+}
+
+function getUuidInternal( pvdaqMD ) {
+    var ret = pvdaqMD.name_public.replace( /\s+/g, '_' );    // this'll be part of a URL; can't take spaces - so convert them to '_'
+    return ret.replace( /#/g, '' );    // also can't take '#' - just remove
 }
 
 function getFirstDate( pvdaqTS ) {
 
-    var firstPt = new Date( pvdaqTS[1][0] );
-
-    var dateTime = firstPt.toISOString();
-
-    return dateTime.substring(0,10);  // lop off the time
+    try {
+	var firstPt = new Date( pvdaqTS[1][0] );
+	var dateTime = firstPt.toISOString();
+	return dateTime.substring(0,10);  // lop off the time
+    } catch ( e ) {
+	return null;
+    }
 }
 
 exports.toMDPed = function( pvdaqMD, pvdaqTS ) {
 
     var actDate = getFirstDate( pvdaqTS );
     var now = new Date();
-    var uuid = pvdaqMD.name_public.replace( /\s+/g, '_' );    // this'll be part of a URL; can't take spaces
+    var uuid = getUuidInternal( pvdaqMD );
 
     var ret = '<sunSpecPlantExtract t="'+now.toISOString()+'" seqId="1" lastSeqId="1" v="2">\r\n';
        ret += '  <plant id="'+uuid+'" locale="en-US" v="2">\r\n';
@@ -74,6 +88,9 @@ exports.toMDPed = function( pvdaqMD, pvdaqTS ) {
 
 exports.toTSPed = function( pvdaqMD,pvdaqTS ) {
 
+    try {
+
+    var start = new Date( pvdaqTS[1][0] ).toISOString();  // this will throw if there's no time series data
     var i = 0;
     var point;
     var points = '';
@@ -82,9 +99,17 @@ exports.toTSPed = function( pvdaqMD,pvdaqTS ) {
 	var timestamp = new Date( point[0] ).toISOString();
 
 	if ( point[7] == null ) continue;
-	var whdc = parseInt( point[7] ) * 1000;
-	if ( point[17] == null ) continue;
-	var whq = parseInt( point[17] ) * 1000;
+	var whdc = parseInt( point[7] ) * 1000;    // energy_from_array
+
+	// the thinking here is this:
+	//   if total_energy_output is present, it's probably the AC production of the PV array (and energy_to_grid contains some other factor in addition and is therefore inappropriate)
+	//   if, however, total_energy_output is not present but energy_to_grid is, then the odds are that energy_to_grid is the output of the PV array
+	var whq;
+	if ( point[17] != null )
+	    whq = parseInt( point[17] ) * 1000;    // total_energy_output
+	else if ( point[9] != null )
+	    whq = parseInt( point[9] ) * 1000;     // energy_to_grid
+	else continue;    // skip this sample
 
 	points += '  <sunSpecAggregatedData t="'+timestamp+'" interval="monthly">\r\n';
 	points += '    <plantMeasurements>\r\n';
@@ -97,9 +122,8 @@ exports.toTSPed = function( pvdaqMD,pvdaqTS ) {
     }
 
     var now = new Date().toISOString();
-    var start = new Date( pvdaqTS[1][0] ).toISOString();
-    var end = new Date( pvdaqTS[i-1][0] ).toISOString();
-    var uuid = pvdaqMD.name_public.replace( /\s+/g, '_' );    // this'll be part of a URL; can't take spaces
+    var uuid = getUuidInternal( pvdaqMD );
+    var end = new Date( pvdaqTS[i-1][0] ).toISOString();  // note: uses 'i', the index of the last+1 sample
 
     var ret = '';
     ret += '<sunSpecPlantExtract t="'+now+'" periodStart="'+start+'" periodEnd="'+end+'" v="2">\r\n';
@@ -108,5 +132,9 @@ exports.toTSPed = function( pvdaqMD,pvdaqTS ) {
     ret += '</sunSpecPlantExtract>';
 
     return ret;
+
+    } catch (e) {
+	return null;
+    }
 }
 

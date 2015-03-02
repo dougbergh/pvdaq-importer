@@ -12579,3 +12579,53 @@ This is the list of plantIds we discovered by querying PVDAQ for timeseries data
 13555 ... failed http code 404
 13556 ... failed http code 404
 13557 ... failed http code 404
+12:28:27
+1200 ... failed
+Error: An error occured creating the plant: createPlant existing uuid: [1200]_Distributed_Sun_-_BWI_Hilton ... succeeded
+1201 ... failed
+Error: An error occured creating the plant: createPlant existing uuid: [1201]_Distributed_Sun_-_5_Executive_Campus ... succeeded
+12:52:57
+12:57:58
+13:06:44
+13:08:37
+13:09:52
+13:10:31
+13:12:03
+13:14:45
+13:25:07
+13:27:52
+13:29:23
+13:39:32
+13:39:55
+13:47:00
+13:59:51
+14:00:27
+14:26:22
+14:27:28
+14:33:40
+14:34:47
+14:40:51
+14:44:01
+14:47:45
+14:48:26
+14:49:03
+14:50:35
+15:01:52
+15:02:08
+15:22:31
+15:24:53
+15:25:16
+15:26:21
+15:27:59
+15:35:31
+15:37:00
+15:37:29
+15:40:39
+15:41:11
+15:41:50
+15:42:20
+15:44:06
+15:44:27
+15:44:40
+15:45:35
+15:45:54

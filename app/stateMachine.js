@@ -57,14 +57,17 @@ exports.getPlantMD = function( plantId ) {//1
     Http.get(getAddrOptions, function( res2 ) {//4
 	    
 	console.log('getAddress STATUS '+plantId+': '+res2.statusCode);
-	if ( res2.statusCode != 200 )
-		return;
+	if ( res2.statusCode != 200 ) {
+	    logResult( plantId+' ... failed' );
+	    return;
+	}
 
 	var replyData = '';
 	res2.on('data', function(data) {
 	    replyData += data;
         });
 	res2.on('end', function(endReply) {//5
+	try {
 	    address = JSON.parse( replyData );
 	    var components = address.results[0].address_components;
 	    var state = '';
@@ -82,25 +85,31 @@ exports.getPlantMD = function( plantId ) {//1
 	    if ( state.length > 0 ) plantMD.state = state;
 	    if ( zip.length > 0 ) plantMD.zip = zip;
 	    var startDate = converter.getFirstYear( plantMD );
+	} catch( e ) {
+	    logResult( plantId+' ... failed' );
+	    return;
+	}
+
 
 
 //
 // getPlantTs
 //		    
-    var options = {
+    var getTsOptions = {
 	host:'developer.nrel.gov',
 	path:'/api/pvdaq/v3/site_data.json?api_key='+pvdaqKey+'&system_id='+plantId+'&aggregate=monthly&start_date='+startDate+'&end_date=1/1/2015',
 	headers:{
 	    'Authorization':pvdaqAuth,
-	    'Connection':'close'  // make the 'end' event happen sooner
 	}
     };
 
-    Http.get(options, function(res3 ) {//6
+    console.log( 'getPlantTS: '+getTsOptions.host+' '+getTsOptions.path );
+
+    Http.get(getTsOptions, function(res3 ) {//6
 	    
 	console.log('getTS STATUS '+plantId+': '+res3.statusCode );
 	if ( res2.statusCode != 200 ) {
-	    logResult( plantId+' ... succeeded' );
+	    logResult( plantId+' ... failed' );
 	    return;
 	}
 
@@ -113,15 +122,24 @@ exports.getPlantMD = function( plantId ) {//1
 	res3.on('end', function(endReply) {//7
 		
 	    var plantTS = JSON.parse( tsData ).outputs;
-		
-	    var mdXml = converter.toMDPed( plantMD, plantTS );
-	    var tsXml = converter.toTSPed( plantMD, plantTS );
 	    
+	    var mdXml = converter.toMDPed( plantMD, plantTS );
+	    if ( mdXml == null ) {
+		logResult( plantId+' ... failed' );
+		return;
+	    }
+	    var tsXml = converter.toTSPed( plantMD, plantTS );
+	    if ( tsXml == null ) {
+		logResult( plantId+' ... failed' );
+		return;
+	    }
+
+
 
 //
 // pokeMD
 //
-    var options = {
+    var pokeMdOptions = {
 	method:'POST',
 	host:'osparctest-env3.elasticbeanstalk.com',
 	path:'/v1/plant',
@@ -130,11 +148,12 @@ exports.getPlantMD = function( plantId ) {//1
 	    'Content-type':'text/xml'
 	}
     };
-    var req = Http.request(options, function(res4) {//8
+    var req = Http.request(pokeMdOptions, function(res4) {//8
 	    
 	console.log('addPlant STATUS '+plantId+': '+res4.statusCode);
 	if ( res4.statusCode != 200 ) {
             logResult( plantId+' ... failed' );
+	    return;
 	}
 
 	res4.on('data', function(chunk) {//9
@@ -143,34 +162,36 @@ exports.getPlantMD = function( plantId ) {//1
 //
 // pokeTS
 //		
-    var options = {
+    var pokeTsOptions = {
 	method:'POST',
 	host:'osparctest-env3.elasticbeanstalk.com',
-	path:'/v1/plant/'+plantId+'/timeseries',
+	path:'/v1/plant/'+converter.getUuid( plantMD )+'/timeseries',
 	headers:{
 	    'Authorization':oSparcAuth,
 	    'Content-type':'text/xml'
 	}
     };
     
-    var req = Http.request(options, function( res5 ) {//10
+    console.log( 'postTS: '+pokeTsOptions.path );
+    var req = Http.request(pokeTsOptions, function( res5 ) {//10
 	    
 	console.log('addTS STATUS: '+res5.statusCode);
 	if ( res5.statusCode != 200 ) {
-	    logResult( plantId+' ... succeeded' );
+	    logResult( plantId+' ... failed' );
 	    return;
 	}
 
 	res5.on('data', function(chunk) {
 	    logResult( plantId+' ... succeeded' );
+	    return;
 	});
 
 //
 // pokeTS closure
 // 	
 	req.on('error', function(e) {
-	    console.log("ERROR on "+plantId+":" + e.message);
             logResult( plantId+' ... failed' );
+	    return;
 	    });
 	});//10
 
