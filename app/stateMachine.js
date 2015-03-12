@@ -2,6 +2,8 @@ var Http = require('http');
 var fs = require('fs');
 var converter = require('./converter.js');
 
+var osparcHost = 'osparc4.elasticbeanstalk.com';
+//var osparcHost = 'osparctest-env3.elasticbeanstalk.com';
 var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
 var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
@@ -124,6 +126,8 @@ exports.getPlantMD = function( plantId ) {//1
 	    var plantTS = JSON.parse( tsData ).outputs;
 	    
 	    var mdXml = converter.toMDPed( plantMD, plantTS );
+	    console.log( "PlantPED:" );
+	    console.log( mdXml );
 	    if ( mdXml == null ) {
 		logResult( plantId+' ... failed' );
 		return;
@@ -141,13 +145,16 @@ exports.getPlantMD = function( plantId ) {//1
 //
     var pokeMdOptions = {
 	method:'POST',
-	host:'osparctest-env3.elasticbeanstalk.com',
+	host:osparcHost,
 	path:'/v1/plant',
 	headers:{
 	    'Authorization':oSparcAuth,
 	    'Content-type':'text/xml'
 	}
     };
+
+    console.log( 'POST MD: '+pokeMdOptions.host+' '+pokeMdOptions.path );
+
     var req = Http.request(pokeMdOptions, function(res4) {//8
 	    
 	console.log('addPlant STATUS '+plantId+': '+res4.statusCode);
@@ -164,7 +171,7 @@ exports.getPlantMD = function( plantId ) {//1
 //		
     var pokeTsOptions = {
 	method:'POST',
-	host:'osparctest-env3.elasticbeanstalk.com',
+	host:osparcHost,
 	path:'/v1/plant/'+converter.getUuid( plantMD )+'/timeseries',
 	headers:{
 	    'Authorization':oSparcAuth,
@@ -172,7 +179,8 @@ exports.getPlantMD = function( plantId ) {//1
 	}
     };
     
-    console.log( 'postTS: '+pokeTsOptions.path );
+    console.log( 'POST TS: '+pokeTsOptions.host+' '+pokeTsOptions.path );
+
     var req = Http.request(pokeTsOptions, function( res5 ) {//10
 	    
 	console.log('addTS STATUS: '+res5.statusCode);
