@@ -33,8 +33,10 @@ exports.getPlantMD = function( plantId ) {//1
 	    
 	res.on('data', function(nrelReply) {//3
 	    console.log('getMD STATUS '+plantId+': '+res.statusCode);
-	    if ( res.statusCode != 200 )
+	    if ( res.statusCode != 200 ) {
+		logResult( plantId+' ... failed getMD' );
 		return;
+	    }
 	    var plantMD = JSON.parse( nrelReply ).outputs[0];
 
 
@@ -60,7 +62,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    
 	console.log('getAddress STATUS '+plantId+': '+res2.statusCode);
 	if ( res2.statusCode != 200 ) {
-	    logResult( plantId+' ... failed' );
+	    logResult( plantId+' ... failed getAddr' );
 	    return;
 	}
 
@@ -69,6 +71,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    replyData += data;
         });
 	res2.on('end', function(endReply) {//5
+
 	try {
 	    address = JSON.parse( replyData );
 	    var components = address.results[0].address_components;
@@ -87,8 +90,12 @@ exports.getPlantMD = function( plantId ) {//1
 	    if ( state.length > 0 ) plantMD.state = state;
 	    if ( zip.length > 0 ) plantMD.zip = zip;
 	    var startDate = converter.getFirstYear( plantMD );
+
+	    console.log( plantId+': state='+state+' zip='+zip+' startDate='+startDate );
+
 	} catch( e ) {
-	    logResult( plantId+' ... failed' );
+	    console.log( plantId+' exception: '+e );
+	    logResult( plantId+' ... failed parsing address' );
 	    return;
 	}
 
@@ -111,7 +118,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    
 	console.log('getTS STATUS '+plantId+': '+res3.statusCode );
 	if ( res2.statusCode != 200 ) {
-	    logResult( plantId+' ... failed' );
+	    logResult( plantId+' ... failed getTS' );
 	    return;
 	}
 
@@ -129,14 +136,16 @@ exports.getPlantMD = function( plantId ) {//1
 	    console.log( "PlantPED:" );
 	    console.log( mdXml );
 	    if ( mdXml == null ) {
-		logResult( plantId+' ... failed' );
+		logResult( plantId+' ... failed parsing MD' );
 		return;
 	    }
 	    var tsXml = converter.toTSPed( plantMD, plantTS );
 	    if ( tsXml == null ) {
-		logResult( plantId+' ... failed' );
+		logResult( plantId+' ... failed parsing TS' );
 		return;
 	    }
+	    console.log( "PlantTS:" );
+	    console.log( tsXml );
 
 
 
@@ -159,7 +168,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    
 	console.log('addPlant STATUS '+plantId+': '+res4.statusCode);
 	if ( res4.statusCode != 200 ) {
-            logResult( plantId+' ... failed' );
+            logResult( plantId+' ... failed posting MD' );
 	    return;
 	}
 
@@ -185,7 +194,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    
 	console.log('addTS STATUS: '+res5.statusCode);
 	if ( res5.statusCode != 200 ) {
-	    logResult( plantId+' ... failed' );
+	    logResult( plantId+' ... failed posting TS' );
 	    return;
 	}
 
