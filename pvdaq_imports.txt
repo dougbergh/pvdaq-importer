@@ -1,0 +1,71 @@
+1199 ... succeeded
+1200 ... succeeded
+1201 ... failed
+1202 ... succeeded
+1203 ... succeeded
+1204 ... succeeded
+1207 ... succeeded
+1208 ... succeeded
+1214 ... succeeded
+1216 ... succeeded
+1217 ... succeeded
+1218 ... succeeded
+1219 ... succeeded
+1220 ... succeeded
+1221 ... succeeded
+1222 ... succeeded
+1223 ... succeeded
+1224 ... succeeded
+1225 ... succeeded
+1226 ... succeeded
+1229 ... failed
+1230 ... failed - WH diff="NaN" WHDC diff=number
+1231 ... succeeded
+1232 ... failed
+1233 ... partial - 19 of 20 records intact.  aok.
+1234 ... succeeded
+1235 ... succeeded
+1236 ... succeeded
+1237 ... succeeded
+1239 ... succeeded
+1244 ... succeeded
+1245 ... succeeded
+1246 ... succeeded
+1247 ... succeeded
+1248 ... succeeded
+1249 ... succeeded
+1250 ... succeeded
+1251 ... failed parsing address
+1252 ... succeeded
+1253 ... succeeded
+1254 ... succeeded
+1255 ... succeeded
+1256 ... succeeded
+1257 ... succeeded
+1258 ... succeeded
+1259 ... succeeded
+1260 ... succeeded
+1261 ... succeeded
+1262 ... succeeded
+1263 ... succeeded
+1264 ... succeeded
+1265 ... succeeded
+1266 ... succeeded
+1267 ... succeeded
+1268 ... succeeded
+1269 ... succeeded
+1270 ... succeeded
+1271 ... succeeded
+1272 ... succeeded
+1273 ... succeeded
+1274 ... succeeded
+1275 ... succeeded
+1276 ... succeeded
+1277 ... succeeded
+1278 ... succeeded
+1284 ... failed posting MD - null DCRating
+1283 ... failed getting MD
+1289 ... failed posting MD - null DCRating
+1292 ... succeeded
+1332 ... succeeded
+
