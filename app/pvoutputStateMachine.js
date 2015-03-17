@@ -1,6 +1,6 @@
 var Http = require('http');
 var fs = require('fs');
-var converter = require('./converter.js');
+var converter = require('./pvoutputConverter.js');
 
 var osparcHost = 'osparc4.elasticbeanstalk.com';
 //var osparcHost = 'osparctest-env3.elasticbeanstalk.com';

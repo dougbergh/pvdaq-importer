@@ -1,9 +1,8 @@
 var Http = require('http');
 var fs = require('fs');
-var converter = require('./converter.js');
+var converter = require('./pvdaqConverter.js');
 
 var osparcHost = 'osparc4.elasticbeanstalk.com';
-//var osparcHost = 'osparctest-env3.elasticbeanstalk.com';
 var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
 var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
