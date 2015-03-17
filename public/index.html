@@ -43,6 +43,14 @@
 	    <!-- BIND THIS VALUE TO formData.xyz IN ANGULAR -->
 	    <table>
 	      <tr>
+		<td>PVDAQ</td>
+		<td><input type="radio" name="source" value="pvdaq" ng-model="formData.source" checked></td>
+	      </tr>
+	      <tr>
+		<td>PVOutput</td>
+		<td><input type="radio" name="source" value="pvoutput" ng-model="formData.source"></td>
+	      </tr>
+	      <tr>
 		<td>Starting system_id</td>
 		<td><input type="text" class="form-control input-lg" ng-model="formData.startSystemId"></td>
 	      </tr>

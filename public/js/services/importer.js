@@ -6,8 +6,8 @@ angular.module('importerService', [])
 	    get : function() {
 		return $http.get('/api/import');
 	    },
-	    import : function(data) {
-		return $http.post('/api/import', data);
+	    import : function(source,data) {
+		return $http.post('/api/import/'+source, data);
 	    }
 	}
     }]);

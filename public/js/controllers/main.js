@@ -8,7 +8,7 @@ angular.module('importerController', [])
 	$scope.loading = true;
 
 	// GET =====================================================================
-	// not sure how this is invoked..
+	// Render the input page
 	Importer.get()
 	    .success(function(data) {
 		    $scope.status = data;
@@ -21,17 +21,21 @@ angular.module('importerController', [])
 	$scope.importSystems = function() {
 
 	    // Validate the formData
-	    if ($scope.formData.startSystemId != undefined) {
+	    if ($scope.formData.source == undefined)
+		alert( "select PVDAQ or PVOutput" );
+
+	    else {
+
 		$scope.loading = true;
 		
-	    // call the importer API to kick off the import
-	    Importer.import($scope.formData)
-		.success(function(data) {
+		// call the importer API to kick off the import
+		Importer.import($scope.formData.source,$scope.formData)
+		    .success(function(data) {
 			
-			$scope.status = data;
-			$scope.loading = false;
-			$scope.formData = {}; // clear the form so our user is ready to enter another
-		    });
+			    $scope.status = data;
+			    $scope.loading = false;
+			    $scope.formData = {}; // clear the form so our user is ready to enter another
+			});
 	    }
 	}
 			  
