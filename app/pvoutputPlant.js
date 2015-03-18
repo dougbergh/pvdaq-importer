@@ -98,19 +98,15 @@ module.exports = function pvoutputPlant() {
     }
 
     var tsDate = 0;
-    var tsSampleDays = 1;
+    var tsOutputs = 1;  // # of days aggregated if monthly
     var tsEnergyGenerated = 2;
     var tsEfficiency = 3;
     var tsEnergyExported = 4;
     var tsEnergyUsed = 5;
-    var tsPeakPower = 6;
-    var tsCondition = 7;
-    var tsMinTemp = 8;
-    var tsMaxTemp = 9;
-    var tsPeakEnergyImport = 10;
-    var tsOffPeakEnergyImport = 11;
-    var tsShoulderEnergyImpor = 12;
-    var tsHighShoulderEnergyImport = 13;
+    var tsPeakEnergyImport = 6;
+    var tsOffPeakEnergyImport = 7;
+    var tsShoulderEnergyImpor = 8;
+    var tsHighShoulderEnergyImport = 9;
 
     //
     // The string we get from pvoutput is 'yyyymm'.  We need to save the 1st of the FOLLOWING
