@@ -111,7 +111,6 @@ exports.getPlantMD = function( plantId ) {//1
 	    console.log( "PlantTS:" );
 	    console.log( tsXml );
 
-	    return;  // XXX
 //
 // pokeMD
 //
@@ -144,7 +143,7 @@ exports.getPlantMD = function( plantId ) {//1
     var pokeTsOptions = {
 	method:'POST',
 	host:osparcHost,
-	path:'/v1/plant/'+converter.getUuid( plantMD )+'/timeseries',
+	path:'/v1/plant/'+plant.getUuid()+'/timeseries',
 	headers:{
 	    'Authorization':oSparcAuth,
 	    'Content-type':'text/xml'

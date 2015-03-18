@@ -26,7 +26,7 @@ module.exports = function pvoutputPlant() {
     var longitude = 14;
 
     this.getName = function() { return this.md[0][name]; }
-    this.getUuid = function() { return 'pvo-'+this.md[0][name]; }
+    this.getUuid = function() { return this.md[0][name]+'-pvo'; }
     this.getDCRating = function() { return this.md[0][dcRating]; }
     this.getPostCode = function() { return this.md[0][postCode]; }
     this.getLat = function() { return this.md[0][latitude]; }
