@@ -3,7 +3,6 @@ var fs = require('fs');
 var converter = require('./pvoutputConverter.js');
 
 var pvoutputKey = '4110292565c6df39d3817013d1e9c362e1ebbb8b';
-//var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var osparcHost = 'osparc4.elasticbeanstalk.com';
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
 var csv2array = require('csv2array');
@@ -24,7 +23,6 @@ exports.getPlantMD = function( plantId ) {//1
 	host:'pvoutput.org',
 	path:'/service/r2/getsystem.jsp?key='+pvoutputKey+'&sid=35722'+'&sid1='+plantId,
     };
-    //    console.log( 'getPlantMD: '+getPlantOptions.host+' '+getPlantOptions.path );
 
     Http.get( getPlantOptions, function(res) {//2
 	    
@@ -35,104 +33,43 @@ exports.getPlantMD = function( plantId ) {//1
 		return;
 	    }
 
+	    var plantMD = '';
+
 	    try {
-	    var csv = reply.toString();
-	    console.log( 'csv:'+csv );
+		var csv = reply.toString();
 
-	    var attrs = csv2array(csv);
+		console.log( 'MD csv:'+csv );
 
-	    var lat = converter.getLat( attrs );
-	    var lon = converter.getLon( attrs );
-	    if ( lat < 26 || lat > 49 || lon < -124 || lon > -67 ) {
-		// not in the U.S.
-		console.log( plantId+' ('+lat+'/'+lon+'): '+converter.getName( attrs )+' is not in the U.S.' );
-		logResult( plantId+' ('+lat+'/'+lon+'): '+converter.getName( attrs )+' is not in the U.S.' );
-		return;
-	    }
-
-	    console.log( plantId+' ('+lat+'/'+lon+'): '+
-			 converter.getName( attrs )+' BINGO: '+converter.getPostCode( attrs ) );
-	    logResult( plantId+' ('+lat+'/'+lon+'): '+
-		       converter.getName( attrs )+' BINGO: '+converter.getPostCode( attrs ) );
+		plantMD = csv2array(csv);
+		
+		var lat = converter.getLat( plantMD );
+		var lon = converter.getLon( plantMD );
+		if ( lat < 26 || lat > 49 || lon < -124 || lon > -67 ) {
+		    // not in the U.S.
+		    console.log( plantId+' ('+lat+'/'+lon+'): '+converter.getName( plantMD )+' is not in the U.S.' );
+		    logResult( plantId+' ('+lat+'/'+lon+'): '+converter.getName( plantMD )+' is not in the U.S.' );
+		    return;
+		}
+		
+		console.log( plantId+' ('+lat+'/'+lon+'): '+
+			     converter.getName( plantMD )+' BINGO: '+converter.getPostCode( plantMD ) );
+		logResult( plantId+' ('+lat+'/'+lon+'): '+
+			   converter.getName( plantMD )+' BINGO: '+converter.getPostCode( plantMD ) );
 	    } catch ( err ) {
-		console.log( plantId+' ERROR' );
-		logResult( plantId+' ERROR' );
+		console.log( plantId+' ERROR getting MD',err );
+		logResult( plantId+' ERROR getting MD', err );
 		return;
 	    }
-	    return;  // XXX
-
-
-
-//
-// PVDAQ returned lat & long.  Get state and postal code from that.
-//
-    // some pvdaq db entries are wrong, their long is positive
-    var long = new String( plantMD.site_longitude );
-    if ( long.charAt(0) != '-' )
-	plantMD.site_longitude = '-'+plantMD.site_longitude;
-
-    var getAddrOptions = {
-	'host':'maps.googleapis.com',
-	'path':'/maps/api/geocode/json?latlng='+plantMD.site_latitude+','+plantMD.site_longitude,
-	'headers': {
-	    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-	    'Accept-Language':'en-US,en;q=0.8,de;q=0.6'
-	}
-    };
-    console.log( 'getAddres: '+getAddrOptions.host+' '+getAddrOptions.path );
-
-    Http.get(getAddrOptions, function( res2 ) {//4
 	    
-	console.log('getAddress STATUS '+plantId+': '+res2.statusCode);
-	if ( res2.statusCode != 200 ) {
-	    logResult( plantId+' ... failed getAddr' );
-	    return;
-	}
-
-	var replyData = '';
-	res2.on('data', function(data) {
-	    replyData += data;
-        });
-	res2.on('end', function(endReply) {//5
-
-	try {
-	    address = JSON.parse( replyData );
-	    var components = address.results[0].address_components;
-	    var state = '';
-	    var zip = '';
-	    components.forEach( function( component ) {
-		    
-		component.types.forEach( function( type ) {
-				
-		    if ( type == "administrative_area_level_1" )
-			state = component.short_name;
-		    if ( type == "postal_code" ) 
-			zip = component.short_name;
-		    });
-		});
-	    if ( state.length > 0 ) plantMD.state = state;
-	    if ( zip.length > 0 ) plantMD.zip = zip;
-	    var startDate = converter.getFirstYear( plantMD );
-
-	    console.log( plantId+': state='+state+' zip='+zip+' startDate='+startDate );
-
-	} catch( e ) {
-	    console.log( plantId+' exception: '+e );
-	    logResult( plantId+' ... failed parsing address' );
-	    return;
-	}
-
-
+	    
 
 //
-// getPlantTs
+// We have a plant in the U.S.  Get its timeseries data: getPlantTS
 //		    
+		
     var getTsOptions = {
-	host:'developer.nrel.gov',
-	path:'/api/pvdaq/v3/site_data.json?api_key='+pvdaqKey+'&system_id='+plantId+'&aggregate=monthly&start_date='+startDate+'&end_date=1/1/2015',
-	headers:{
-	    'Authorization':pvdaqAuth,
-	}
+	host:'pvoutput.org',
+	path:'/service/r2/getoutput.jsp?key='+pvoutputKey+'&sid=35722'+'&sid1='+plantId+'&df=20070101&dt20150301&a=m',
     };
 
     console.log( 'getPlantTS: '+getTsOptions.host+' '+getTsOptions.path );
@@ -140,7 +77,7 @@ exports.getPlantMD = function( plantId ) {//1
     Http.get(getTsOptions, function(res3 ) {//6
 	    
 	console.log('getTS STATUS '+plantId+': '+res3.statusCode );
-	if ( res2.statusCode != 200 ) {
+	if ( res3.statusCode != 200 ) {
 	    logResult( plantId+' ... failed getTS' );
 	    return;
 	}
@@ -148,12 +85,30 @@ exports.getPlantMD = function( plantId ) {//1
 	var tsData = '';
 
 	res3.on('data', function(dataReply) {
-	        tsData += dataReply;
-	    });
+	    tsData += dataReply;
+	});
 	
 	res3.on('end', function(endReply) {//7
 		
-	    var plantTS = JSON.parse( tsData ).outputs;
+	    var plantTS = '';
+
+	    try {
+		var csv = tsData.toString();
+
+		// samples are separated by ';' each sample contains a comma-separated list of data points
+		for ( prevIndex = 0, index = csv.indexOf( ';' ); index != -1; prevIndex = index, index = csv.indexOf( ';',prevIndex+1 ) ) {
+		    var sample = csv.substring( prevIndex, index );
+		    plantTSSample = csv2array( sample );
+		    console.log( plantTSSample );
+		}
+
+	    } catch ( err ) {
+		console.log( plantId+' ERROR getting TS',err );
+		logResult( plantId+' ERROR getting TS',err );
+		return;
+	    }
+
+	    return; // XXX
 	    
 	    var mdXml = converter.toMDPed( plantMD, plantTS );
 	    console.log( "PlantPED:" );
@@ -256,19 +211,7 @@ exports.getPlantMD = function( plantId ) {//1
 //
 // getPlantTS closure
 //		    
-	}).on('error', function(e) {//6
-	    console.log("ERROR: " + e.message);
-	});
-//
-// getPlantTS closure
-//		    
 	    }).on('error', function(e) {//5
-	    console.log("ERROR: " + e.message);
-	});
-//
-// getAddress closure
-//		    
-	}).on('error', function(e) {//4
 	    console.log("ERROR: " + e.message);
 	});
 //
