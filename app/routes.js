@@ -20,7 +20,7 @@ function pvdaqAsync(item, callback) {
 
 function pvoutputAsync(item, callback) {
     pvoutput.getPlantMD( item );
-    setTimeout(function() { callback(); }, 2000);
+    setTimeout(function() { callback(); }, 15000);
 }
 
 function final(results) { console.log('Done', results); }
