@@ -31,13 +31,15 @@ exports.getPlantMD = function( plantId ) {//1
 		return;
 	    }
 
+	    var plant = new pvoutputPlant();
+
 	    try {  // getMD
 
 		var csv = reply.toString();
 
 		console.log( 'MD csv:'+csv );
 
-		var plant = new pvoutputPlant( csv );
+		plant.setMetaData( csv );
 
 		var lat = plant.getLat();
 		var lon = plant.getLon();
@@ -84,13 +86,9 @@ exports.getPlantMD = function( plantId ) {//1
 	res3.on('end', function(endReply) {//7
 		
 	    try {
-		plant.setTimeSeries( tsData.toString() );
-		var sample;
-		while ( (sample = plant.getNextSample()) != null ) {
-		    console.log( plantId+': next sample: '+sample );
-		}
-
-		//		converter.toTSPed( plantMD, samples );
+		var csv = tsData.toString();
+		console.log( 'TS csv:'+csv );
+		plant.setTimeSeries( csv );
 
 	    } catch ( err ) {  // try get TS
 		console.log( plantId+' ERROR getting TS',err );
@@ -98,16 +96,14 @@ exports.getPlantMD = function( plantId ) {//1
 		return;
 	    }
 
-	    return; // XXX
-	    
-	    var mdXml = converter.toMDPed( plantMD, plantTS );
-	    console.log( "PlantPED:" );
-	    console.log( mdXml );
+	    var mdXml = plant.toMDPed();
 	    if ( mdXml == null ) {
 		logResult( plantId+' ... failed parsing MD' );
 		return;
 	    }
-	    var tsXml = converter.toTSPed( plantMD, plantTS );
+	    console.log( "PlantPED:" );
+	    console.log( mdXml );
+	    var tsXml = plant.toTSPed();
 	    if ( tsXml == null ) {
 		logResult( plantId+' ... failed parsing TS' );
 		return;
@@ -115,8 +111,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    console.log( "PlantTS:" );
 	    console.log( tsXml );
 
-
-
+	    return;  // XXX
 //
 // pokeMD
 //
