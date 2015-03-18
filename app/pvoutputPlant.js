@@ -1,38 +1,45 @@
-//
-// these are the indices of the named parameter in the csv stream
-//
-var name = 0;
-var dcRating = 1;
-var postCode = 2;
-var numPanels = 3;
-var panelPower = 4;
-var panelBrand = 5;
-var numInverters = 6;
-var inverterPower = 7;
-var inverterBrand = 8;
-var orientation = 9;
-var arrayTilt = 10;
-var shade = 11;
-var installDate = 12;
-var latitude = 13;
-var longitude = 14;
+var csv2array = require('csv2array');
 
-exports.getName = function( attrs ) {
-    return attrs[0][name];
+module.exports = function pvoutputPlant( csv ) {
+    var name = 0;
+    var dcRating = 1;
+    var postCode = 2;
+    var numPanels = 3;
+    var panelPower = 4;
+    var panelBrand = 5;
+    var numInverters = 6;
+    var inverterPower = 7;
+    var inverterBrand = 8;
+    var orientation = 9;
+    var arrayTilt = 10;
+    var shade = 11;
+    var installDate = 12;
+    var latitude = 13;
+    var longitude = 14;
+
+    var samples = new Array();
+
+    this.md = csv2array( csv );
+    this.getName = function() { return this.md[0][name]; }
+    this.getPostCode = function() { return this.md[0][postCode]; }
+    this.getLat = function() { return this.md[0][latitude]; }
+    this.getLon = function() { return this.md[0][longitude]; }
+
+    this.setTimeSeries = function( csv ) {
+	// samples are separated by ';' each sample contains a comma-separated list of data points
+	for ( prevIndex = 0, index = csv.indexOf( ';' ); 
+	      index != -1; 
+	      prevIndex = index+1, index = csv.indexOf( ';',prevIndex+1 ) ) {
+	    var sample = csv.substring( prevIndex, index );
+	    samples.push( csv2array( sample ) );
+	}
+    }
+    this.getNextSample = function() {
+	return samples.pop();
+    }
+	
+    return this;
 }
-exports.getPostCode = function( attrs ) {
-    return attrs[0][postCode];
-}
-exports.getLat = function( attrs ) {
-    return attrs[0][latitude];
-}
-exports.getLon = function( attrs ) {
-    return attrs[0][longitude];
-}
-
-
-
-
 
 
 

@@ -1,11 +1,9 @@
 var Http = require('http');
 var fs = require('fs');
-var converter = require('./pvoutputConverter.js');
-
 var pvoutputKey = '4110292565c6df39d3817013d1e9c362e1ebbb8b';
 var osparcHost = 'osparc4.elasticbeanstalk.com';
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
-var csv2array = require('csv2array');
+var pvoutputPlant = require( './pvoutputPlant.js' );
 
 //
 // write result to file to keep track
@@ -33,33 +31,28 @@ exports.getPlantMD = function( plantId ) {//1
 		return;
 	    }
 
-	    var plantMD = '';
+	    try {  // getMD
 
-	    try {
 		var csv = reply.toString();
 
 		console.log( 'MD csv:'+csv );
 
-		plantMD = csv2array(csv);
-		
-		var lat = converter.getLat( plantMD );
-		var lon = converter.getLon( plantMD );
+		var plant = new pvoutputPlant( csv );
+
+		var lat = plant.getLat();
+		var lon = plant.getLon();
+
 		if ( lat < 26 || lat > 49 || lon < -124 || lon > -67 ) {
 		    // not in the U.S.
-		    console.log( plantId+' ('+lat+'/'+lon+'): '+converter.getName( plantMD )+' is not in the U.S.' );
-		    logResult( plantId+' ('+lat+'/'+lon+'): '+converter.getName( plantMD )+' is not in the U.S.' );
+		    console.log( plantId+' ('+lat+'/'+lon+'): '+plant.getName()+' is not in the U.S.' );
+		    logResult( plantId+' ('+lat+'/'+lon+'): '+plant.getName()+' is not in the U.S.' );
 		    return;
 		}
 		
 		console.log( plantId+' ('+lat+'/'+lon+'): '+
-			     converter.getName( plantMD )+' BINGO: '+converter.getPostCode( plantMD ) );
+			     plant.getName()+' BINGO: '+plant.getPostCode() );
 		logResult( plantId+' ('+lat+'/'+lon+'): '+
-			   converter.getName( plantMD )+' BINGO: '+converter.getPostCode( plantMD ) );
-	    } catch ( err ) {
-		console.log( plantId+' ERROR getting MD',err );
-		logResult( plantId+' ERROR getting MD', err );
-		return;
-	    }
+			   plant.getName()+' BINGO: '+plant.getPostCode() );
 	    
 	    
 
@@ -69,7 +62,7 @@ exports.getPlantMD = function( plantId ) {//1
 		
     var getTsOptions = {
 	host:'pvoutput.org',
-	path:'/service/r2/getoutput.jsp?key='+pvoutputKey+'&sid=35722'+'&sid1='+plantId+'&df=20070101&dt20150301&a=m',
+	path:'/service/r2/getoutput.jsp?key='+pvoutputKey+'&sid=35722'+'&sid1='+plantId+'&df=20070101&dt20150201&a=m',
     };
 
     console.log( 'getPlantTS: '+getTsOptions.host+' '+getTsOptions.path );
@@ -90,19 +83,16 @@ exports.getPlantMD = function( plantId ) {//1
 	
 	res3.on('end', function(endReply) {//7
 		
-	    var plantTS = '';
-
 	    try {
-		var csv = tsData.toString();
-
-		// samples are separated by ';' each sample contains a comma-separated list of data points
-		for ( prevIndex = 0, index = csv.indexOf( ';' ); index != -1; prevIndex = index, index = csv.indexOf( ';',prevIndex+1 ) ) {
-		    var sample = csv.substring( prevIndex, index );
-		    plantTSSample = csv2array( sample );
-		    console.log( plantTSSample );
+		plant.setTimeSeries( tsData.toString() );
+		var sample;
+		while ( (sample = plant.getNextSample()) != null ) {
+		    console.log( plantId+': next sample: '+sample );
 		}
 
-	    } catch ( err ) {
+		//		converter.toTSPed( plantMD, samples );
+
+	    } catch ( err ) {  // try get TS
 		console.log( plantId+' ERROR getting TS',err );
 		logResult( plantId+' ERROR getting TS',err );
 		return;
@@ -181,6 +171,7 @@ exports.getPlantMD = function( plantId ) {//1
 	    return;
 	});
 
+
 //
 // pokeTS closure
 // 	
@@ -214,6 +205,14 @@ exports.getPlantMD = function( plantId ) {//1
 	    }).on('error', function(e) {//5
 	    console.log("ERROR: " + e.message);
 	});
+
+
+    } catch ( err ) {  // try get MD
+	console.log( plantId+' ERROR getting MD',err );
+	logResult( plantId+' ERROR getting MD', err );
+	return;
+    }
+
 //
 // getPlantMD closure
 //
@@ -221,6 +220,8 @@ exports.getPlantMD = function( plantId ) {//1
 	    console.log("ERROR: " + e.message);
 		});
 	});//2
+
+
 };
 
 
