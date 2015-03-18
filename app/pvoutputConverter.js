@@ -1,3 +1,48 @@
+//
+// these are the indices of the named parameter in the csv stream
+//
+var name = 0;
+var dcRating = 1;
+var postCode = 2;
+var numPanels = 3;
+var panelPower = 4;
+var panelBrand = 5;
+var numInverters = 6;
+var inverterPower = 7;
+var inverterBrand = 8;
+var orientation = 9;
+var arrayTilt = 10;
+var shade = 11;
+var installDate = 12;
+var latitude = 13;
+var longitude = 14;
+
+exports.getName = function( attrs ) {
+    return attrs[0][name];
+}
+exports.getPostCode = function( attrs ) {
+    return attrs[0][postCode];
+}
+exports.getLat = function( attrs ) {
+    return attrs[0][latitude];
+}
+exports.getLon = function( attrs ) {
+    return attrs[0][longitude];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 exports.getFirstYear = function( pvdaqMD ) {
     var year = pvdaqMD.available_years[0];
     if ( year == null || year.length == 0 )

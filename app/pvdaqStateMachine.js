@@ -101,7 +101,7 @@ exports.getPlantMD = function( plantId ) {//1
 
 
 //
-// getPlantTs
+// getPlantTS
 //		    
     var getTsOptions = {
 	host:'developer.nrel.gov',

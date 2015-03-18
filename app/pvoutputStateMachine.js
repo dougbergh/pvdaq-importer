@@ -2,17 +2,17 @@ var Http = require('http');
 var fs = require('fs');
 var converter = require('./pvoutputConverter.js');
 
+var pvoutputKey = '4110292565c6df39d3817013d1e9c362e1ebbb8b';
+//var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var osparcHost = 'osparc4.elasticbeanstalk.com';
-//var osparcHost = 'osparctest-env3.elasticbeanstalk.com';
-var pvdaqKey = 'dKI1nywdVEQTvB6Ra84sceIXTKFIaCxo8rxMFV2u';
-var pvdaqAuth = 'Basic ' + new Buffer('dbergh:6cV867c2UjW').toString('base64');  // XXX make these user inputs
 var oSparcAuth = 'Basic ' + new Buffer('dp5@sunspec.org:dp51!').toString('base64');
+var csv2array = require('csv2array');
 
 //
 // write result to file to keep track
 //    
 function logResult( text ) {
-    fs.appendFileSync( 'pvdaq_imports.txt', text+'\r\n' );
+    fs.appendFileSync( 'pvoutput_imports.txt', text+'\r\n' );
 }
 
 //
@@ -21,23 +21,46 @@ function logResult( text ) {
 exports.getPlantMD = function( plantId ) {//1
 
     var getPlantOptions = {
-	host:'developer.nrel.gov',
-	path:'/api/pvdaq/v3/sites.json?api_key='+pvdaqKey+'&system_id='+plantId,
-	headers:{
-	    'Authorization':pvdaqAuth
-	}
+	host:'pvoutput.org',
+	path:'/service/r2/getsystem.jsp?key='+pvoutputKey+'&sid=35722'+'&sid1='+plantId,
     };
-    console.log( 'getPlantMD: '+getPlantOptions.host+' '+getPlantOptions.path );
+    //    console.log( 'getPlantMD: '+getPlantOptions.host+' '+getPlantOptions.path );
 
     Http.get( getPlantOptions, function(res) {//2
 	    
-	res.on('data', function(nrelReply) {//3
+	res.on('data', function(reply) {//3
 	    console.log('getMD STATUS '+plantId+': '+res.statusCode);
 	    if ( res.statusCode != 200 ) {
 		logResult( plantId+' ... failed getMD' );
 		return;
 	    }
-	    var plantMD = JSON.parse( nrelReply ).outputs[0];
+
+	    try {
+	    var csv = reply.toString();
+	    console.log( 'csv:'+csv );
+
+	    var attrs = csv2array(csv);
+
+	    var lat = converter.getLat( attrs );
+	    var lon = converter.getLon( attrs );
+	    if ( lat < 26 || lat > 49 || lon < -124 || lon > -67 ) {
+		// not in the U.S.
+		console.log( plantId+' ('+lat+'/'+lon+'): '+converter.getName( attrs )+' is not in the U.S.' );
+		logResult( plantId+' ('+lat+'/'+lon+'): '+converter.getName( attrs )+' is not in the U.S.' );
+		return;
+	    }
+
+	    console.log( plantId+' ('+lat+'/'+lon+'): '+
+			 converter.getName( attrs )+' BINGO: '+converter.getPostCode( attrs ) );
+	    logResult( plantId+' ('+lat+'/'+lon+'): '+
+		       converter.getName( attrs )+' BINGO: '+converter.getPostCode( attrs ) );
+	    } catch ( err ) {
+		console.log( plantId+' ERROR' );
+		logResult( plantId+' ERROR' );
+		return;
+	    }
+	    return;  // XXX
+
 
 
 //
